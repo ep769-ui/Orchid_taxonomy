@@ -4,8 +4,8 @@
   --fg: #f0f0f3; --dim: #aaaab4; --accent: #397b4b;
   --accepted: #79cf91; --synonym: #78b8ff; --contested: #ff8591;
   --absent: #aaaab4; --warn: #ffb454;
-  --wcvp: #2e7d32; --wfo: #1565c0; --cites_csv: #ef6c00;
-  --cites_pdf: #f9a825; --user_synonyms: #6a1b9a;
+  --wcvp: #79cf91; --wfo: #78b8ff; --cites_csv: #ffb454;
+  --cites_pdf: #f4d26b; --user_synonyms: #ce9ef2;
 }
 * { box-sizing: border-box; }
 body {
@@ -141,6 +141,23 @@ tr:last-child td { border-bottom: 0; }
 .cites-i        { color: #b71c1c; background: #b71c1c22; border-color: #b71c1c55; }
 .cites-ii       { color: #ef6c00; background: #ef6c0022; border-color: #ef6c0055; }
 .cites-iii      { color: #f9a825; background: #f9a82522; border-color: #f9a82555; }
+
+/* Keep source and relationship labels readable against the black theme.
+   Source colours are generated separately; these more specific rules retain
+   the same colour meanings while making their text brighter. */
+:root .src-wcvp { color: var(--wcvp); }
+:root .src-wfo { color: var(--wfo); }
+:root .src-cites_csv { color: var(--cites_csv); }
+:root .src-cites_pdf { color: var(--cites_pdf); }
+:root .src-user_synonyms { color: var(--user_synonyms); }
+.chip.ty-homotypic { color: var(--accepted); }
+.chip.ty-heterotypic { color: #f192bb; }
+.chip.ty-orthographic { color: #d1ad95; }
+.chip.ty-nomenclatural { color: #adc4d1; }
+.chip.ty-mixed { color: var(--warn); }
+.chip.cites-i { color: var(--contested); }
+.chip.cites-ii { color: var(--warn); }
+.chip.cites-iii { color: var(--cites_pdf); }
 
 .st-accepted    { color: var(--accepted); }
 .st-synonym     { color: var(--synonym); }
