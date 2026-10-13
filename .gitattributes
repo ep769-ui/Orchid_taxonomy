@@ -1,0 +1,2 @@
+# Preserve original cell whitespace and stable download checksums.
+web/resources/*.csv text eol=lf -whitespace

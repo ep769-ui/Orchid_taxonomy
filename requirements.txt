@@ -1,0 +1,7 @@
+# What the Streamlit app in archive/ needs to run, and nothing more.
+#
+# The static site in web/ needs no runtime at all — it is files. Its build
+# step needs only pandas; see requirements-web.txt. The pipeline needs a PDF
+# engine on top; see requirements-pipeline.txt.
+streamlit>=1.36
+pandas>=2.0

@@ -1,0 +1,42 @@
+[
+  {
+    "id": "pleuro_colombia",
+    "label": "Colombia orchid reference",
+    "mode": "taxonomic",
+    "file": "pleuro_colombia.csv",
+    "sha256": "8c1d9bc3a68a73cc1f04e308d4444fccfe49833f4e80ad52412f51e684480f31",
+    "workbookSha256": "1de156e7888aa138348cefde4097425df427761cae3b8ec9a3b857c0cd76711a",
+    "nameColumn": "species_name",
+    "aliasColumns": ["synonyms"],
+    "aliasSeparator": ";",
+    "distributionColumn": "distribution",
+    "description": "A regional reference with species names, their supplied synonyms and distribution text. Included automatically in individual searches and batch reports.",
+    "origin": "Workbook pleuro_colombia.xlsx, worksheet Hoja1, supplied by the project owner and attributed to Karremans et al. (2023).",
+    "edition": "Karremans et al. 2023; workbook snapshot supplied on 11 October 2026.",
+    "citation": "Karremans et al. (2023). Colombian Orchidaceae: A Catalogue of the Pleurothallidinae. Lankesteriana 23(2): 181–400.",
+    "citationUrl": "https://doi.org/10.15517/lank.v23i2.56158",
+    "licence": "Owner-supplied tabular reference. The cited article is published under CC BY-NC-ND 3.0; the article itself is not redistributed here.",
+    "notes": "The species_name column is interpreted as this reference's accepted name, with synonyms linked to it. Comparison is at species rank. Distribution text, including codes and asterisks, is preserved without interpretation. Botanical accents are retained. NA placeholders and hybrid names with a multiplication sign are retained in the CSV download but excluded from matching by the current binomial resolver. This reference does not assert CITES legal status or change the core database's conflict classifications."
+  },
+  {
+    "id": "flora_brasil",
+    "label": "Flora e Funga do Brasil (orchids)",
+    "mode": "taxonomic",
+    "file": "flora_brasil.csv",
+    "sha256": "3b4210a3963c29078e510217445f308689fde5a38daf5e098614db99f11da5af",
+    "sourceSha256": "f36156d8e7a0e71e7acfba8da517f294bab815f1aa5b5f4d690019d7f3cc50d2",
+    "sourceMd5": "f73751178516ebcf6ad78a5e0ac3fa17",
+    "nameColumn": "species",
+    "statusColumn": "taxonomicStatus",
+    "acceptedColumn": "acceptedName",
+    "distributionColumn": "states",
+    "description": "Orchidaceae at species rank from the consolidated Brazilian flora. This snapshot contains 11,182 records: 3,301 Accepted, 7,729 Synonym and 152 with no taxonomic status. Duplicate records are retained.",
+    "origin": "Flora e Funga do Brasil, Jardim Botânico do Rio de Janeiro. Downloaded as the fixed, already-merged bulk dataset offered by florabr 1.4.0, then filtered to Orchidaceae and Species. No website scraping was used.",
+    "edition": "Fixed release 393.432, published on Zenodo on 1 October 2026; retrieved 11 October 2026.",
+    "citation": "Flora e Funga do Brasil. Jardim Botânico do Rio de Janeiro. Consolidated fixed snapshot 393.432 distributed by florabr (Zenodo record 23084491).",
+    "citationUrl": "https://doi.org/10.5281/zenodo.23084491",
+    "homepage": "https://floradobrasil.jbrj.gov.br/consulta/",
+    "licence": "CC BY 4.0, as declared for the fixed dataset on Zenodo. The florabr package's GPL code is not bundled.",
+    "notes": "Accepted names, synonyms and state strings are used as supplied. Missing statuses are not treated as accepted, and synonyms without accepted-name targets keep an empty target. Multiple taxonomic outcomes remain ambiguous. The download retains taxon identifiers, full scientific names, nomenclatural status, biome, origin, endemism and publication year. Records include native, exotic and unspecified origins; presence here does not imply a native Brazilian distribution or CITES legal status. Core conflict classifications are unchanged."
+  }
+]
