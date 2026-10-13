@@ -1,7 +1,11 @@
-# Orchid Taxonomy
+# Christ's College — Orchid Taxonomy
 
 Consolidated orchid species database across five sources, with a static browser
 app for search, batch comparison and private reference lists.
+
+The public app is deployed from this repository through GitHub Pages. The
+interface uses Christ's College branding with a black background. Successful
+pushes to `main` build, test and publish the app automatically.
 
 This independent version lives at
 [`ep769-ui/Orchid_taxonomy`](https://github.com/ep769-ui/Orchid_taxonomy) and builds

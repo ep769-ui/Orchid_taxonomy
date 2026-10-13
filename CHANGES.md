@@ -40,7 +40,20 @@ Use a recent Node.js with the built-in test runner and File/Response APIs
 (Node.js 22 or newer). Visit `/parity/` to compare the browser resolver against
 the archived Python implementation's 1,213 fixtures.
 
-## Deploy this copy separately
+## Publish the Christ's College app
+
+The app uses Christ's College branding and a black background. The
+`.github/workflows/deploy-pages.yml` workflow builds the complete database, runs
+the import/export and consolidation checks, and publishes the `web` artifact
+after successful pushes to `main`. It can also be run manually from Actions.
+
+GitHub Pages must use **GitHub Actions** as its publishing source in the
+repository's **Settings → Pages**. No custom domain, API keys or private uploaded
+checklists are needed. Application assets use relative paths so the app works
+under this repository's Pages subdirectory. An HTML Content Security Policy
+preserves the browser-only data handling on hosts without custom response headers.
+
+## Alternative Netlify hosting
 
 Create a **new** Netlify project connected to `ep769-ui/Orchid_taxonomy`, branch
 `main`. The committed `netlify.toml` supplies these settings:

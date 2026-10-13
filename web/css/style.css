@@ -1,8 +1,9 @@
 :root {
-  --bg: #0e1117; --panel: #161b25; --panel-2: #1c2330; --line: #2a3342;
-  --fg: #e6edf3; --dim: #8b98a9; --accent: #2e7d32;
-  --accepted: #2e7d32; --synonym: #1565c0; --contested: #c62828;
-  --absent: #5a6472; --warn: #ef6c00;
+  color-scheme: dark;
+  --bg: #000000; --panel: #0d0d0f; --panel-2: #19191d; --line: #303036;
+  --fg: #f0f0f3; --dim: #aaaab4; --accent: #397b4b;
+  --accepted: #79cf91; --synonym: #78b8ff; --contested: #ff8591;
+  --absent: #aaaab4; --warn: #ffb454;
   --wcvp: #2e7d32; --wfo: #1565c0; --cites_csv: #ef6c00;
   --cites_pdf: #f9a825; --user_synonyms: #6a1b9a;
 }
@@ -18,7 +19,7 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0
 
 /* sidebar */
 .sidebar { width: 232px; flex: none; background: var(--panel); border-right: 1px solid var(--line); padding: 22px 18px; }
-.brand { font-size: 1.05rem; font-weight: 650; margin: 0 0 2px; }
+.brand { font-size: 1.18rem; font-weight: 650; margin: 0 0 2px; }
 .brand-sub { color: var(--dim); font-size: 0.82rem; margin-bottom: 22px; }
 .nav button {
   display: block; width: 100%; text-align: left; background: none; border: 0;
@@ -94,7 +95,7 @@ button.primary:disabled { opacity: 0.45; cursor: default; }
 table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
 th { text-align: left; color: var(--dim); font-weight: 600; border-bottom: 1px solid var(--line);
      padding: 7px 10px; white-space: nowrap; }
-td { padding: 7px 10px; border-bottom: 1px solid #202836; vertical-align: top; }
+td { padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
 tr:last-child td { border-bottom: 0; }
 .scroll-x { overflow-x: auto; }
 

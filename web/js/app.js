@@ -13,7 +13,7 @@ const note = document.getElementById('boot-note');
 function about(container) {
   const idx = data.index();
   container.innerHTML = `
-    <h1>About Orchid Taxonomy</h1>
+    <h1>Christ’s College Orchid Taxonomy</h1>
     <p class="lede">One place to find out what an orchid name means: whether it is
       current, what it is a synonym of, whether CITES regulates it, and — where the
       authorities disagree — exactly who says what.</p>
