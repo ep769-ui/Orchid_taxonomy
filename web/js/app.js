@@ -41,9 +41,8 @@ function about(container) {
       <li><b>Check a list of names.</b> Upload a spreadsheet of names and get back
         one row per name saying how each resolves, what every source says about it
         individually, and the reason behind any disagreement.</li>
-      <li><b>Compare against your own list.</b> Load your authority's own checklist
-        and it is compared alongside the five reference sources everywhere, with
-        disagreements called out.</li>
+      <li><b>Compare against your own list.</b> Use <b>User's database</b> to add a
+        temporary source to individual searches and batch reports.</li>
     </ul>
 
     <div class="section">Where the answers come from</div>
@@ -53,9 +52,8 @@ function about(container) {
       the disagreement spelled out rather than resolved silently behind your back.
       See <b>Data sources</b> for what each one is authoritative for.</p>
     <p>The included <b>Colombia orchid reference</b> (Karremans et al. 2023) and
-      <b>Flora e Funga do Brasil</b> add regional taxonomic comparisons to searches
-      and exports, preserving their supplied distributions. Their claims are
-      shown separately from the five-source consolidation.</p>
+      two Brazilian snapshots add regional taxonomic comparisons to searches and
+      exports. Each source has its own result alongside the five-source consolidation.</p>
 
     <div class="section">Your data</div>
     <p>Nothing you type or upload is transmitted anywhere. The database is

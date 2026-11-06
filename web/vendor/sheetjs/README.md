@@ -2,7 +2,7 @@
 
 `xlsx.mjs` is an unmodified copy of the official ES module, distributed under
 Apache-2.0 (see `LICENSE`). It is dynamically imported from this site's own
-origin for `.xlsx` inputs. No CDN request, telemetry, or workbook upload occurs.
+origin for `.xls` and `.xlsx` inputs. No CDN request, telemetry, or workbook upload occurs.
 
 Source: https://cdn.sheetjs.com/xlsx-0.20.3/package/xlsx.mjs
 

@@ -92,5 +92,30 @@ The converter checks the published MD5 before extracting. Review the data and
 metadata together when updating to a new release. Public builds read the committed
 CSV without needing access to Zenodo.
 
-Private WISIA data is not bundled with this app. Both regional references are
-additional comparisons; neither changes the core five-source conflict classes.
+## Flora do Brasil (supplied workbook)
+
+`species_flora.csv` is an extract of taxonomic fields from worksheet `Hoja1`
+of the supplied `species_Flora.xlsx`. The workbook attributes its data to
+Flora do Brasil 2020, Jardim Botânico do Rio de Janeiro. See the
+[publisher's official checklist](https://doi.org/10.15468/1mtkaw) for source
+attribution and [publisher licensing](https://ipt.jbrj.gov.br/jbrj/resource?r=lista_especies_flora_brasil).
+The exact publisher edition behind this workbook is unspecified. It is shown
+separately from the fixed Brazilian bulk extract above.
+
+The CSV retains 9,237 source rows. The 7,414 rows with rank `ESPECIE` are
+eligible for binomial matching. `scientificName` is the name being checked,
+and `acceptedNameUsage` supplies the accepted usage. A usable species target can
+appear as accepted even without its own row in the workbook. Targets outside
+the species matcher are shown verbatim in the notes, without promoting an
+infraspecific target to an accepted species. The workbook does not supply a
+synonym-type column; the app does not infer homotypic or heterotypic labels.
+
+```bash
+python scripts/import_species_flora.py /path/to/species_Flora.xlsx web/resources/species_flora.csv
+```
+
+The workbook is not committed. Its checksum and the extract checksum are in
+`catalog.json`. Update them with the data when regenerating the extract.
+
+Private WISIA data is not bundled. The regional references are separate
+comparisons and do not change the core five-source conflict classes.

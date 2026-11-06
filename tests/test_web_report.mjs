@@ -19,9 +19,14 @@ globalThis.fetch = async input => {
   return new Response(bytes, { headers: { 'content-length': String(bytes.length) } });
 };
 
-test('batch reports include both regional references while preserving core verdicts', async () => {
+test('batch reports include regional and temporary databases while preserving core verdicts', async () => {
   await data.load();
   await backbone.initialize();
+  const temporary = backbone.build('custom_pilot', 'Pilot list', [
+    { name: 'Anathallis ariasii', target: 'Stelis ariasii' },
+  ], 'name', null, 'target', { inferAcceptedTargets: true });
+  backbone.register(temporary);
+  assert.equal(backbone.verdictsFor('Stelis ariasii').custom_pilot.status, 'accepted');
   const names = ['Pleurothallis aberrans', 'Pabstiella alligatorifera',
     'Acianthera alligatorifera', 'Anathallis stictophylla', 'Anathallis ariasii'];
   const report = await buildReport(names.map(name => ({ name, permit_id: '0017' })), 'name');
@@ -33,8 +38,13 @@ test('batch reports include both regional references while preserving core verdi
   assert.equal(report[1].flora_brasil_status, 'accepted');
   assert.equal(report[1].flora_brasil_distribution, 'MG;PR;RJ;RS;SC;SP');
   assert.equal(report[2].flora_brasil_accepted_name, 'Pabstiella alligatorifera');
+  assert.equal(report[2].species_flora_status, 'synonym');
+  assert.equal(report[2].species_flora_accepted_name, 'Pabstiella alligatorifera');
+  assert.equal(report[1].species_flora_status, 'accepted');
   assert.equal(report[3].flora_brasil_status, 'unrecognized_status');
   assert.equal(report[3].flora_brasil_accepted_name, '');
+  assert.equal(report[4].custom_pilot_status, 'synonym');
+  assert.equal(report[4].custom_pilot_accepted_name, 'Stelis ariasii');
   for (const row of report) {
     const core = await data.resolveFull(row.name);
     assert.equal(row.contest_class, core.contestClass);
@@ -44,9 +54,13 @@ test('batch reports include both regional references while preserving core verdi
       assert.equal(row[`${source}_status`], core.perSource[source].status);
       assert.equal(row[`${source}_accepted_name`], core.perSource[source].acceptedName);
     }
-    for (const id of ['pleuro_colombia', 'flora_brasil']) {
+    for (const id of ['pleuro_colombia', 'flora_brasil', 'species_flora', 'custom_pilot']) {
       for (const field of ['status', 'accepted_name', 'relationship_type', 'reference_names',
         'linked_names', 'notes', 'distribution']) assert.ok(Object.hasOwn(row, `${id}_${field}`));
     }
   }
+  backbone.unregister(temporary.id);
+  assert.equal(backbone.verdictsFor('Anathallis ariasii').custom_pilot, undefined);
+  const [afterRemoval] = await buildReport([{ name: 'Anathallis ariasii' }], 'name');
+  assert.ok(!Object.hasOwn(afterRemoval, 'custom_pilot_status'));
 });

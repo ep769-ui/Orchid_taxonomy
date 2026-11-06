@@ -153,28 +153,32 @@ anyone who has built a spreadsheet against `wcvp_status` should not have it
 break because the display name changed — and the report now includes a table
 mapping each source's name to its columns.
 
-## Your reference lists
+## User's database
 
 A checklist is parsed in the page and kept in `sessionStorage`, so a reload does
 not lose it and closing the tab discards it. The Streamlit version keeps it in
 server-side session state, which means the file is uploaded first; here it never
 leaves the tab.
 
-The browser accepts CSV, TSV and `.xlsx` files for both batch checks and reference
+The browser accepts CSV, TSV, `.xls` and `.xlsx` files for both batch checks and reference
 lists. Excel workbooks offer a worksheet selector and a five-row preview. Imports
 are limited to 20 MB, 200,000 rows and 256 columns per worksheet. The local
 SheetJS module is loaded only for Excel; its version, licence and checksum are
 recorded in [`vendor/sheetjs/README.md`](vendor/sheetjs/README.md).
 
-Map a reference-name column and optionally several additional name columns.
+For taxonomy, start with the [CSV template](resources/user_database_template.csv).
+Use `accepted_name` and `synonym` with one synonym per row, or supply a name to
+check and an accepted name in separate columns (for example, `scientificName`
+and `acceptedNameUsage`). For custom layouts, map a reference-name column and
+optionally several additional name columns.
 Additional cells can contain one name or semicolon-separated names. An optional
 distribution column preserves its original text for display and export.
 Choose what the list means:
 
 - **Names only** records presence without asserting taxonomic status.
 - **Trade-name associations** preserves groups of related trade or administrative
-  names without treating them as scientific synonyms. Wide synonym columns
-  suggest this mode; the user can change it.
+  names without treating them as scientific synonyms. The importer suggests
+  this mode for linked-name layouts without an explicit accepted-name heading.
 - **Taxonomic assertions** compares accepted names and synonyms with the built-in
   sources. Conflicting rows retain all outcomes and produce an ambiguous verdict
   rather than silently choosing the first mapping.
@@ -184,17 +188,18 @@ from the built-in database. Each list contributes seven batch columns:
 `<id>_status`, `<id>_accepted_name`, `<id>_relationship_type`,
 `<id>_reference_names`, `<id>_linked_names`, `<id>_notes` and `<id>_distribution`. Only taxonomic mode
 populates accepted names and contributes to taxonomic disagreement notices.
-Column auto-mapping recognises English, German, Spanish and French headings.
+Common column names are suggested automatically. Review the mapping before loading.
 
 A checklist too large for the ~5 MB session-storage quota still loads; it says
 so, and will not survive a reload.
 
-The **Colombia orchid reference** (Karremans et al. 2023) and **Flora e Funga do
-Brasil** (fixed release 393.432) are included automatically through
+The **Colombia orchid reference** (Karremans et al. 2023), **Flora e Funga do
+Brasil** (fixed release 393.432), and **Flora do Brasil (supplied workbook)** are included automatically through
 [`resources/catalog.json`](resources/catalog.json). It uses the same model but
 fetches public data rather than saving it in session storage. The Colombian
 reference has 2,357 source rows; the Brazilian extract has 11,182 Orchidaceae
-species records. Citations, checksums and provenance are documented in
+species records. The separate workbook has 9,237 source rows, of which 7,414
+are at species rank. Citations, checksums and provenance are documented in
 [`resources/README.md`](resources/README.md).
 Missing or damaged binomials are counted and excluded from matching, while the
 downloadable CSV retains every original row. Duplicate and contradictory

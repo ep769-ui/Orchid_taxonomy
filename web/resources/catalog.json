@@ -38,5 +38,30 @@
     "homepage": "https://floradobrasil.jbrj.gov.br/consulta/",
     "licence": "CC BY 4.0, as declared for the fixed dataset on Zenodo. The florabr package's GPL code is not bundled.",
     "notes": "Accepted names, synonyms and state strings are used as supplied. Missing statuses are not treated as accepted, and synonyms without accepted-name targets keep an empty target. Multiple taxonomic outcomes remain ambiguous. The download retains taxon identifiers, full scientific names, nomenclatural status, biome, origin, endemism and publication year. Records include native, exotic and unspecified origins; presence here does not imply a native Brazilian distribution or CITES legal status. Core conflict classifications are unchanged."
+  },
+  {
+    "id": "species_flora",
+    "label": "Flora do Brasil (supplied workbook)",
+    "mode": "taxonomic",
+    "file": "species_flora.csv",
+    "sha256": "a84b70504295a1932d3c9871c2239346a048463f02dd20cfd0182a9d719f9401",
+    "workbookSha256": "d99c5c8cbd525c3308b8c62dd863094a1f7dbc91466096b6bfd48342c33b353a",
+    "nameColumn": "scientificName",
+    "acceptedColumn": "acceptedNameUsage",
+    "statusColumn": "taxonomicStatus",
+    "nomenclaturalStatusColumn": "nomenclaturalStatus",
+    "rankColumn": "taxonRank",
+    "rankValue": "ESPECIE",
+    "inferAcceptedTargets": true,
+    "speciesTargetsOnly": true,
+    "showAcceptedUsage": true,
+    "description": "An Orchidaceae workbook that links names in scientificName to the names used as accepted in acceptedNameUsage. It contributes a separate result to every species comparison and batch report.",
+    "origin": "Worksheet Hoja1 in the supplied species_Flora.xlsx. The workbook cites Flora do Brasil 2020, Jardim Botânico do Rio de Janeiro.",
+    "edition": "Workbook supplied in November 2026; publisher release version not specified.",
+    "citation": "Flora e Funga do Brasil. Jardim Botânico do Rio de Janeiro. Official checklist and source attribution.",
+    "citationUrl": "https://doi.org/10.15468/1mtkaw",
+    "homepage": "https://floradobrasil.jbrj.gov.br/consulta/",
+    "licence": "The publisher's official checklist is CC BY 4.0. This is a taxonomic extract of the supplied workbook; attribution and original name fields are retained.",
+    "notes": "The CSV contains 9,237 source rows. Only the 7,414 species-rank rows are eligible for binomial matching. Accepted-name targets can be found even when the workbook has no standalone accepted row. A target outside the supported species format is shown verbatim in the notes. This workbook is compared separately from the existing Brazilian bulk snapshot and does not change the core taxonomy or CITES verdicts."
   }
 ]

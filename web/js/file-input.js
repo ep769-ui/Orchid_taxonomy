@@ -3,14 +3,19 @@ import { parseCsv, tableFromRows } from './csv.js';
 import { esc, table } from './dom.js';
 
 export async function readTables(file) {
-  if (!/\.(xlsx|csv|tsv|txt)$/i.test(file.name)) throw new Error('Choose an .xlsx, .csv, .tsv or .txt file.');
-  if (file.size > 20 * 1024 * 1024) throw new Error('Choose a file smaller than 20 MB.');
-  if (!/\.xlsx$/i.test(file.name)) return [{ name: '', ...parseCsv(await file.text()) }];
+  if (!/\.(xlsx?|csv|tsv|txt)$/i.test(file.name)) throw new Error('Choose an .xls, .xlsx, .csv, .tsv or .txt file.');
+  if (file.size > 20 * 1024 * 1024) throw new Error('Choose a file no larger than 20 MB.');
+  if (!/\.xlsx?$/i.test(file.name)) return [{ name: '', ...parseCsv(await file.text()) }];
   // Vendored and loaded only on demand. No workbook bytes leave the browser.
   const { read, utils } = await import('../vendor/sheetjs/xlsx.mjs');
   const bytes = new Uint8Array(await file.arrayBuffer());
-  if (bytes[0] !== 0x50 || bytes[1] !== 0x4b || bytes[2] !== 3 || bytes[3] !== 4) {
-    throw new Error('This is not an unencrypted .xlsx workbook. Export it as .xlsx or CSV and try again.');
+  const startsWith = signature => signature.every((byte, i) => bytes[i] === byte);
+  const xlsx = /\.xlsx$/i.test(file.name);
+  const zip = startsWith([0x50, 0x4b, 3, 4]);
+  const compound = startsWith([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]);
+  const biff = [0, 2, 4, 8].some(version => startsWith([9, version]));
+  if (xlsx ? !zip : !(compound || biff)) {
+    throw new Error(`This is not an unencrypted ${xlsx ? '.xlsx' : '.xls'} workbook. Save it as Excel or CSV and try again.`);
   }
   const workbook = read(bytes, {
     type: 'array', dense: true, cellFormula: false, cellHTML: false, cellStyles: false,
@@ -19,7 +24,7 @@ export async function readTables(file) {
     const sheet = workbook.Sheets[name];
     if (!sheet['!ref']) return { name, headers: [], records: [] };
     const range = utils.decode_range(sheet['!ref']);
-    if (range.e.r - range.s.r > 200000 || range.e.c > 255) {
+    if (range.e.r - range.s.r > 200000 || range.e.c - range.s.c >= 256) {
       return { name, error: 'This sheet exceeds 200,000 rows or 256 columns.' };
     }
     try {

@@ -65,21 +65,22 @@ is checked against. Both offer:
    source**, the `contest_class` and plain-language `contest_reason` behind any
    contested verdict, and the description year — so a contested batch no longer
    has to be re-checked one name at a time.
-3. **Your own checklists** — load an authority's internal backbone (WISIA, a
+3. **User's database** — load an authority's internal backbone (WISIA, a
    national checklist, a nursery register) and it is compared alongside the five
    built-in sources everywhere in the app, with its own export columns.
-   The browser app accepts CSV, TSV and Excel, including multiple name columns.
+   The browser app accepts CSV, TSV and Excel (.xls or .xlsx), including multiple name columns.
    Choose taxonomic assertions, trade-name associations or names only. Trade
    associations do not assert synonymy or populate an accepted-name field.
    Files are processed locally and lists are kept only in the browser session.
 4. **Data sources** — what each source is, where it comes from, and the exact
    rules behind `contest_class`.
 
-The static app also includes two regional references: the owner-supplied
+The static app also includes three regional references: the owner-supplied
 **Colombia orchid reference** (Karremans et al. 2023; 2,357 source rows) and
-**Flora e Funga do Brasil** (fixed release 393.432; 11,182 orchid species records).
-They contribute separate taxonomic verdicts and original distributions in
-searches, plus `pleuro_colombia_*` and `flora_brasil_*` columns in batch exports.
+**Flora e Funga do Brasil** (fixed release 393.432; 11,182 orchid species records),
+and **Flora do Brasil (supplied workbook)** (9,237 rows, including 7,414 at species rank).
+They contribute separate taxonomic verdicts in searches and use
+`pleuro_colombia_*`, `flora_brasil_*` and `species_flora_*` columns in batch exports.
 Their claims do not change the core five-source consolidation. Citations,
 snapshot counts, checksums and downloads are in [`web/resources/`](web/resources/README.md).
 Private WISIA data remains an upload option and is not bundled.

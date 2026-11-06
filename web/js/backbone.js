@@ -66,6 +66,23 @@ export function suggestions(query, limit = 12) {
 const NONE = '— (none) —';
 const MODE_LABEL = { names: 'Names only', trade: 'Trade-name associations', taxonomic: 'Taxonomic checklist' };
 
+export function suggestMapping(headers) {
+  const keys = headers.map(h => h.toLowerCase().replace(/[^a-z0-9]/g, ''));
+  const accepted = keys.findIndex(k => /^(acceptedname(?:usage)?|accepted|currentname|validname)$/.test(k));
+  const scientific = keys.findIndex(k => /^(scientificname|speciesname|taxonname|binomial|name)$/.test(k));
+  const reference = scientific >= 0 ? scientific : accepted >= 0 ? accepted
+    : Math.max(0, headers.findIndex(h => /scientific|species_name|taxon|name|wissenschaftlich|nombre|nom_|espece|especie/i.test(h)));
+  const aliasCols = headers.filter((_, i) => i !== reference &&
+    /^(synonyms?|alias|aliases|associated|linked|synonymes?)\d*$/.test(keys[i]));
+  return {
+    reference, aliasCols,
+    accepted: accepted !== reference ? accepted : -1,
+    status: reference !== accepted ? keys.findIndex(k => /^(taxonomicstatus|status|statut|estado)$/.test(k)) : -1,
+    distribution: keys.findIndex(k => /^(distribution|range|verbreitung)$/.test(k)),
+    mode: accepted >= 0 ? MODES.TAXONOMIC : aliasCols.length ? MODES.TRADE : MODES.NAMES,
+  };
+}
+
 export function resourceCards() {
   return includedResources().map(bb => `<div class="panel">
     <h3>${esc(bb.label)}</h3>
@@ -77,7 +94,8 @@ export function resourceCards() {
       target="_blank" rel="noopener noreferrer">${esc(bb.resource.citation)}</a></p>` : ''}
     ${bb.resource.homepage ? `<p><a href="${esc(bb.resource.homepage)}" target="_blank"
       rel="noopener noreferrer">Visit the source database</a></p>` : ''}
-    <p>${nameCount(bb).toLocaleString()} searchable names from ${bb.nRows.toLocaleString()} rows.
+    <p>${nameCount(bb).toLocaleString()} searchable names from ${bb.nRows.toLocaleString()} rows
+      ${bb.nSourceRows !== bb.nRows ? `(${bb.nSourceRows.toLocaleString()} total source rows)` : ''}.
       ${bb.nUnparseable ? `${bb.nUnparseable.toLocaleString()} name cells could not be indexed, including unsupported names and placeholders.` : ''}
       ${bb.nSkippedRows ? `${bb.nSkippedRows.toLocaleString()} rows have no usable reference name.` : ''}
       ${bb.nAmbiguous ? `${bb.nAmbiguous.toLocaleString()} names have multiple taxonomic outcomes; all are retained.` : ''}</p>
@@ -89,53 +107,55 @@ export function resourceCards() {
 export function render(container) {
   container.innerHTML = '';
   const root = el(`<div>
-    <h1>Your reference lists</h1>
-    <p class="lede">Compare your authority's name lists alongside the five built-in
-      sources in individual searches and batch reports.</p>
-    <p>Choose what the links in your list mean. A trade database may connect names
-      for administrative purposes without making a taxonomic statement.</p>
-    <p class="muted">Files are read in this tab and never sent to a server. Loaded
-      lists are kept in this tab's session storage; remove them below when finished.
-      They do not change the shared database or its conflict classifications.</p>
-    <div class="section">Included resources</div>
-    ${resourceCards()}
-    <div id="loaded"></div>
-    <div class="section">Add a list</div>
-    <p class="section-intro">Excel (.xlsx), CSV or TSV with a header row. Use one
-      name per row, or a reference name followed by several linked-name columns.
-      You can load several lists or historical editions separately.</p>
-    <label for="bbfile">Choose a reference-list file</label>
-    <input type="file" id="bbfile" accept=".xlsx,.csv,.tsv,.txt">
+    <h1>User's database</h1>
+    <p class="lede">Add a temporary source to compare with the built-in databases
+      in individual searches and batch reports.</p>
+    <div class="panel">
+      <h2>Prepare your file</h2>
+      <p>Use CSV or Excel (.xls or .xlsx), up to 20 MB. Put unique column headings
+        on the first row and use species names with a genus and epithet. Author
+        citations are optional.</p>
+      ${table(['accepted_name', 'synonym'], [
+        ['Pabstiella alligatorifera', 'Pleurothallis alligatorifera'],
+        ['Pabstiella alligatorifera', 'Specklinia alligatorifera'],
+      ])}
+      <p>Use one synonym per row and repeat the accepted name as needed. Leave the
+        synonym cell blank for an accepted name with no synonyms. You can also
+        supply <code>scientificName</code> and <code>acceptedNameUsage</code>:
+        map the first to the name to check and the second to the accepted name.</p>
+      <p><a href="resources/user_database_template.csv" download>Download the CSV template</a></p>
+      <p class="muted">Your file stays in this browser. Loaded databases are kept
+        in this tab's session; remove them below when finished. Each database has
+        its own results and does not change the shared taxonomy or CITES verdicts.</p>
+    </div>
+    <div class="section">Add a database</div>
+    <label for="bbfile">Choose your database file</label>
+    <input type="file" id="bbfile" accept=".xls,.xlsx,.csv,.tsv,.txt">
     <div id="bbmap"></div>
+    <div id="loaded" aria-live="polite"></div>
   </div>`);
   container.appendChild(root);
   paintLoaded(root.querySelector('#loaded'), container);
   bindFileInput(root.querySelector('#bbfile'), root.querySelector('#bbmap'),
     ({ headers, records }, file, mapEl) => {
-      const guessName = Math.max(0, headers.findIndex(h =>
-        /scientific|species_name|taxon|name|wissenschaftlich|nombre|nom_|espece|especie/i.test(h)));
-      const aliasCols = headers.filter((h, i) => i !== guessName &&
-        /^(synonyms?|alias|aliases|associated|linked|synonymes?)(\s*\d+)?$/i.test(h));
-      const guessDistribution = headers.findIndex(h => /^(distribution|range|verbreitung)$/i.test(h));
+      const guess = suggestMapping(headers);
+      const { aliasCols } = guess;
       const guessSeparator = aliasCols.some(col => records.some(row => String(row[col] ?? '').includes(';')));
-      const guessStatus = headers.findIndex(h => /^(status|statut|estado)$/i.test(h));
-      const guessAccepted = headers.findIndex((h, i) => i !== guessName &&
-        /accepted|current|valid|akzept|g(ü|ue)ltig|correct|aceptado|accept/i.test(h));
       const opts = selected => [NONE, ...headers].map((h, i) =>
         `<option${i === selected + 1 ? ' selected' : ''}>${esc(h)}</option>`).join('');
       mapEl.innerHTML = `<div class="panel">
-        <label for="bblabel">Name for this list or edition</label>
+        <label for="bblabel">Name for this database or edition</label>
         <input type="text" id="bblabel" value="${esc(file.name.replace(/\.[^.]+$/, ''))}">
         <label for="bbmode">What do the relationships mean?</label>
         <select id="bbmode">
-          <option value="names">Names only (presence, no taxonomic judgement)</option>
-          <option value="trade"${aliasCols.length ? ' selected' : ''}>Trade-name associations (no taxonomic synonymy)</option>
-          <option value="taxonomic">Taxonomic checklist (accepted names and synonyms)</option>
+          <option value="names"${guess.mode === MODES.NAMES ? ' selected' : ''}>Names only (presence, no taxonomic judgement)</option>
+          <option value="trade"${guess.mode === MODES.TRADE ? ' selected' : ''}>Trade-name associations (no taxonomic synonymy)</option>
+          <option value="taxonomic"${guess.mode === MODES.TAXONOMIC ? ' selected' : ''}>Taxonomic checklist (accepted names and synonyms)</option>
         </select>
         <p id="bbmode-help" class="muted"></p>
-        <label for="bbname">Reference name column (required)</label>
-        <select id="bbname">${opts(guessName)}</select>
-        <fieldset><legend>Additional name columns (optional)</legend>
+        <label for="bbname">Name to check or reference name (required)</label>
+        <select id="bbname">${opts(guess.reference)}</select>
+        <fieldset><legend>Synonym or linked name columns (optional)</legend>
           ${headers.map((h, i) => `<label class="column-choice"><input type="checkbox"
             name="bbalias" value="${i}"${aliasCols.includes(h) ? ' checked' : ''}> ${esc(h)}</label>`).join('')}
         </fieldset>
@@ -143,17 +163,17 @@ export function render(container) {
         <select id="bbseparator"><option value="">One name per cell</option>
           <option value=";"${guessSeparator ? ' selected' : ''}>Several names separated by semicolons</option></select>
         <label for="bbdistribution">Distribution column (optional, kept as supplied)</label>
-        <select id="bbdistribution">${opts(guessDistribution)}</select>
+        <select id="bbdistribution">${opts(guess.distribution)}</select>
         <div id="bb-taxonomic" hidden>
           <label for="bbstatus">Status column (optional)</label>
-          <select id="bbstatus">${opts(guessStatus)}</select>
-          <label for="bbaccepted">Accepted-name column for synonyms (optional)</label>
-          <select id="bbaccepted">${opts(guessAccepted)}</select>
+          <select id="bbstatus">${opts(guess.status)}</select>
+          <label for="bbaccepted">Accepted name for the name being checked (optional)</label>
+          <select id="bbaccepted">${opts(guess.accepted)}</select>
         </div>
         <p class="muted">Matching is at species rank. Author citations and
           infraspecific endings are removed for comparison. Damaged or
           unparseable names are counted in the import notes.</p>
-        <p><button class="primary" id="bbgo">Load reference list</button></p>
+        <p><button class="primary" id="bbgo">Load database</button></p>
         <div id="bbresult" role="status"></div>
       </div>`;
       const modeInput = mapEl.querySelector('#bbmode');
@@ -180,13 +200,16 @@ export function render(container) {
           .map(input => headers[Number(input.value)]).filter(h => h !== nameCol);
         const statusCol = mode === MODES.TAXONOMIC ? pick('#bbstatus') : null;
         const acceptedCol = mode === MODES.TAXONOMIC ? pick('#bbaccepted') : null;
+        if (acceptedCol && (acceptedCol === nameCol || selectedAliases.includes(acceptedCol))) {
+          result.innerHTML = '<p>Use a separate accepted-name column, or leave it unset when the reference name is already the accepted name.</p>'; return;
+        }
         if (statusCol && (statusCol === nameCol || statusCol === acceptedCol || selectedAliases.includes(statusCol))) {
           result.innerHTML = '<p>The status column must be separate from the name columns.</p>'; return;
         }
         const label = mapEl.querySelector('#bblabel').value.trim() || 'checklist';
         const bb = build(nextId(label), label, records, nameCol, statusCol, acceptedCol,
           { mode, aliasCols: selectedAliases, aliasSeparator: mapEl.querySelector('#bbseparator').value,
-            distributionCol: pick('#bbdistribution') });
+            distributionCol: pick('#bbdistribution'), inferAcceptedTargets: true });
         if (!nameCount(bb)) { result.innerHTML = '<p>No usable species names were found in the selected columns.</p>'; return; }
         const persisted = register(bb);
         mapEl.innerHTML = '';
@@ -203,8 +226,8 @@ export function render(container) {
 function paintLoaded(host, container) {
   const lists = Object.values(read());
   if (!lists.length) { host.innerHTML = ''; return; }
-  host.innerHTML = `<div class="section">Loaded lists</div>${table(
-    ['List', 'Meaning', 'Report prefix', 'Names / rows', 'Import notes', ''],
+  host.innerHTML = `<div class="section">Loaded databases</div>${table(
+    ['Database', 'Meaning', 'Report prefix', 'Names / rows', 'Import notes', ''],
     lists.map(bb => [
       `<b>${esc(bb.label)}</b>`, MODE_LABEL[bb.mode || 'taxonomic'], `<code>${esc(bb.id)}</code>`,
       `${nameCount(bb).toLocaleString()} names / ${bb.nRows.toLocaleString()} rows`,

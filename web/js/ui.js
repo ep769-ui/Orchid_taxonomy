@@ -43,14 +43,22 @@ export function perSourcePanel(res) {
   const registered = backbone.registered();
   const linkedNames = names => (names || []).map(name =>
     `<button class="linkish" data-goto="${esc(name)}"><span class="sci">${esc(name)}</span></button>`).join(' · ');
+  const acceptedLink = v => v.status === STATUS.SYNONYM && v.acceptedName
+    ? linkedNames([v.acceptedName]) : `<span class="sci">${esc(v.acceptedName)}</span>`;
   const customRows = Object.entries(mine).map(([id, v]) => [
     `<b>${esc(registered[id].label)}</b><br><span class="muted">${esc({
       taxonomic: 'Taxonomic checklist', trade: 'Trade-name associations', names: 'Names only',
     }[v.mode])}</span>`,
     esc(STATUS_LABEL[v.status] || v.status),
-    `<span class="sci">${esc(v.acceptedName)}</span>`,
+    acceptedLink(v),
     linkedNames(v.referenceNames), linkedNames(v.linkedNames), esc(v.distribution), esc(v.detail),
   ]);
+  const synonymGroups = Object.values(registered).map(bb => {
+    const names = backbone.reverseSynonyms(bb, res.binomial);
+    if (!names.length) return '';
+    return `<details class="panel"><summary>${esc(bb.label)}: ${names.length.toLocaleString()}
+      synonym${names.length === 1 ? '' : 's'}</summary><p>${linkedNames(names)}</p></details>`;
+  }).filter(Boolean);
 
   return `<h3>What each source says</h3>
     <p class="caption">Resolved for <span class="sci">${esc(res.binomial)}</span>.
@@ -62,6 +70,8 @@ export function perSourcePanel(res) {
         taxonomic judgement. Their accepted-name field stays empty. Reference
         names identify records in each list; they do not imply accepted taxa.</p>
       ${table(['List / meaning', 'Says', 'Taxonomic accepted name', 'Reference names', 'Linked names', 'Distribution as supplied', 'Notes'], customRows)}` : ''}
+    ${synonymGroups.length ? `<h3>Synonyms reported by additional databases</h3>
+      ${synonymGroups.join('')}` : ''}
     ${disagreementNote(res, mine, registered)}`;
 }
 
@@ -81,7 +91,7 @@ function disagreementNote(res, mine, registered) {
       result: ${differs.join('; ')}.</div>`;
   }
   if (!Object.keys(registered).length) {
-    return `<p class="muted">Load your own checklist on the <b>Your own checklists</b>
+    return `<p class="muted">Load your own checklist on the <b>User's database</b>
       page to see it compared here.</p>`;
   }
   return '';

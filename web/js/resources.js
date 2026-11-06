@@ -6,14 +6,19 @@ export function buildResource(spec, text) {
   if (!/^[a-z][a-z0-9_]*$/.test(spec.id)) throw new Error('Invalid resource identifier.');
   const { headers, records } = parseCsv(text);
   for (const column of [spec.nameColumn, ...(spec.aliasColumns || []), spec.distributionColumn,
-    spec.statusColumn, spec.acceptedColumn].filter(Boolean)) {
+    spec.statusColumn, spec.acceptedColumn, spec.rankColumn, spec.nomenclaturalStatusColumn].filter(Boolean)) {
     if (!headers.includes(column)) throw new Error(`${spec.label}: missing column ${column}.`);
   }
-  const bb = build(spec.id, spec.label, records, spec.nameColumn, spec.statusColumn || null, spec.acceptedColumn || null, {
+  const matchingRows = spec.rankColumn ? records.filter(row => row[spec.rankColumn] === spec.rankValue) : records;
+  const bb = build(spec.id, spec.label, matchingRows, spec.nameColumn, spec.statusColumn || null, spec.acceptedColumn || null, {
     mode: spec.mode, aliasCols: spec.aliasColumns || [], aliasSeparator: spec.aliasSeparator || '',
     distributionCol: spec.distributionColumn,
+    inferAcceptedTargets: spec.inferAcceptedTargets,
+    speciesTargetsOnly: spec.speciesTargetsOnly,
+    showAcceptedUsage: spec.showAcceptedUsage,
+    nomenclaturalStatusCol: spec.nomenclaturalStatusColumn,
   });
-  return { ...bb, bundled: true, resource: spec };
+  return { ...bb, nSourceRows: records.length, bundled: true, resource: spec };
 }
 
 export async function loadResources() {

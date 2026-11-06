@@ -32,7 +32,7 @@ export function render(container) {
 
     <div class="panel">
       <h4>What to upload</h4>
-      <p><b>An Excel (.xlsx), CSV or TSV file with a header row and one name per row.</b> Only one column
+      <p><b>An Excel (.xls or .xlsx), CSV or TSV file with a header row and one name per row.</b> Only one column
         is needed — the species names. Anything else in the file is carried through
         to the report untouched, so your own reference numbers, permit ids or notes
         stay alongside the results.</p>
@@ -49,13 +49,13 @@ export function render(container) {
         it. If you want your authority's own checklist compared against
         <i>every</i> lookup from now on — appearing on species cards, and adding its
         own columns to reports like this one — load it under
-        <b>Your reference lists</b> instead.</p>
+        <b>User's database</b> instead.</p>
       <p class="muted">Either way, the file is read in this browser tab and is never
         transmitted anywhere.</p>
     </div>
 
     <label for="file">Choose an Excel, CSV or TSV file</label>
-    <input type="file" id="file" accept=".xlsx,.csv,.tsv,.txt">
+    <input type="file" id="file" accept=".xls,.xlsx,.csv,.tsv,.txt">
     <div id="map"></div>
     <div id="out"></div>
   </div>`);
@@ -76,7 +76,7 @@ export function render(container) {
         <label for="label">Authority name (for the report filename)</label>
         <input type="text" id="label" placeholder="e.g. Sander's List 2024">
         ${Object.values(backbone.registered()).length
-          ? `<p class="muted">Your reference lists will be compared too:
+          ? `<p class="muted">Additional databases included in this comparison:
               ${Object.values(backbone.registered()).map(bb =>
                 `<b>${esc(bb.label)}</b>`).join(', ')}.</p>`
           : ''}
@@ -101,6 +101,7 @@ export function render(container) {
  *  needs the detail for. The shard cache dedupes, so a 5,000-row list costs at
  *  most one fetch per shard actually touched. */
 export async function buildReport(records, nameCol) {
+  const referenceLists = Object.values(backbone.registered());
   // Warm every contested shard first, in parallel, so the map below is not a
   // waterfall of one round trip per row.
   const contested = new Set();
@@ -130,7 +131,7 @@ export async function buildReport(records, nameCol) {
     }
     // Loaded checklists get the same column pair, so an authority can diff a list
     // against its own backbone and the five built-in sources in one pass.
-    for (const bb of Object.values(backbone.registered())) {
+    for (const bb of referenceLists) {
       Object.assign(row, backbone.reportColumns(bb, res.binomial));
     }
     return row;

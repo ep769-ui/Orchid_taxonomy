@@ -5,6 +5,7 @@ import { parseCsv } from '../web/js/csv.js';
 import { readTables } from '../web/js/file-input.js';
 import { utils, write } from '../web/vendor/sheetjs/xlsx.mjs';
 import { buildResource } from '../web/js/resources.js';
+import { suggestMapping } from '../web/js/backbone.js';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 
@@ -159,6 +160,46 @@ test('Brazilian bulk extract preserves statuses, unresolved targets and conflict
   assert.match(lookup(bb, 'Bifrenaria calcarata').detail, /Bifrenaria tetragona/);
 });
 
+test('supplied Brazilian workbook maps species to accepted usage and supports reverse lookup', () => {
+  const specs = JSON.parse(readFileSync(new URL('../web/resources/catalog.json', import.meta.url), 'utf8'));
+  const spec = specs.find(s => s.id === 'species_flora');
+  const bytes = readFileSync(new URL('../web/resources/' + spec.file, import.meta.url));
+  assert.equal(createHash('sha256').update(bytes).digest('hex'), spec.sha256);
+  const bb = buildResource(spec, bytes.toString('utf8'));
+  assert.equal(bb.nSourceRows, 9237);
+  assert.equal(bb.nRows, 7414);
+  assert.equal(nameCount(bb), 9332);
+  const target = 'Pabstiella alligatorifera';
+  const synonyms = ['Acianthera alligatorifera', 'Lepanthes blumenavii',
+    'Pleurothallis alligatorifera', 'Pleurothallis blumenavii', 'Specklinia alligatorifera'];
+  assert.equal(lookup(bb, target).status, 'accepted');
+  assert.deepEqual(reverseSynonyms(bb, target), synonyms);
+  for (const synonym of synonyms) {
+    const outcome = lookup(bb, synonym);
+    assert.equal(outcome.status, 'synonym');
+    assert.equal(outcome.acceptedName, target);
+    assert.match(outcome.detail, /Pabstiella alligatorifera \(Rchb\.f\.\) Luer/);
+  }
+  assert.equal(lookup(bb, 'Alatiglossum baptista').status, 'not_in_source');
+  const infra = lookup(bb, 'Paradisanthus micranthus');
+  assert.equal(infra.status, 'synonym');
+  assert.equal(infra.acceptedName, '');
+  assert.match(infra.detail, /Paradisanthus bahiensis subsp\. micranthus/);
+});
+
+test('database mapping recognises both documented layouts regardless of column order', () => {
+  const wide = suggestMapping(['synonym', 'accepted_name']);
+  assert.equal(wide.mode, 'taxonomic');
+  assert.equal(wide.reference, 1);
+  assert.deepEqual(wide.aliasCols, ['synonym']);
+  const flat = suggestMapping(['acceptedNameUsage', 'scientificName', 'taxonomicStatus']);
+  assert.equal(flat.mode, 'taxonomic');
+  assert.equal(flat.reference, 1);
+  assert.equal(flat.accepted, 0);
+  assert.equal(flat.status, 2);
+  assert.equal(suggestMapping(['trade_name', 'synonym']).mode, 'trade');
+});
+
 test('CSV handles BOM, European delimiters, quoted delimiters and multiline fields', () => {
   const result = parseCsv('\uFEFFname;notes\r\nVanda falcata;"comma, and semicolon;\nnext line"\r\n');
   assert.deepEqual(result.headers, ['name', 'notes']);
@@ -188,4 +229,15 @@ test('Excel importer reads multiple sheets and keeps formatted identifiers', asy
   assert.equal(sheets[1].records[0].record_id, '0007');
   assert.equal(sheets[1].records[0]['Synonym 1'], 'Acampe longifolia');
   await assert.rejects(readTables(new File(['not an xlsx zip'], 'broken.xlsx')));
+});
+
+test('legacy XLS opens locally and a mislabeled text file fails clearly', async () => {
+  const workbook = utils.book_new();
+  utils.book_append_sheet(workbook, utils.aoa_to_sheet([['accepted_name', 'synonym'],
+    ['Dracula alcithoë', 'Masdevallia alcithoë']]), 'Orchids');
+  const file = new File([write(workbook, { type: 'array', bookType: 'biff8' })], 'authority.xls');
+  const [sheet] = await readTables(file);
+  assert.equal(sheet.name, 'Orchids');
+  assert.equal(sheet.records[0].synonym, 'Masdevallia alcithoë');
+  await assert.rejects(readTables(new File(['name,synonym\na,b'], 'broken.xls')), /not an unencrypted \.xls workbook/);
 });

@@ -4,10 +4,12 @@
 import { STATUS, normalizeQuery } from './data.js';
 
 export const MODES = { TAXONOMIC: 'taxonomic', TRADE: 'trade', NAMES: 'names' };
-const ACCEPTED = new Set(['accepted', 'accepted name', 'valid', 'current', 'a', 'yes', '1', 'true']);
+const ACCEPTED = new Set(['accepted', 'accepted name', 'valid', 'current', 'a', 'yes', '1', 'true', 'nome_aceito']);
 const SYNONYM = new Set(['synonym', 'syn', 'synonym of', 's', 'heterotypic', 'homotypic',
-  'heterotypic synonym', 'homotypic synonym', 'not accepted']);
+  'heterotypic synonym', 'homotypic synonym', 'not accepted', 'sinonimo']);
 const unique = (items) => [...new Set(items)].sort();
+const speciesTarget = raw => /^\p{Lu}[\p{L}-]*\s+\p{Ll}[\p{L}-]*(?:\s|$)/u.test(raw)
+  && !/^\S+\s+\S+\s+(?:subsp|ssp|var|f|forma|nothosubsp)\.?\s/i.test(raw);
 
 // Reject damaged or placeholder names instead of indexing a truncated binomial.
 // Author citations after a valid binomial can still be removed by normalizeQuery.
@@ -30,6 +32,7 @@ export function build(id, label, records, nameCol, statusCol, acceptedCol, optio
   const mode = options.mode || MODES.TAXONOMIC; // compatibility with existing callers
   if (!Object.values(MODES).includes(mode)) throw new Error('Choose a valid relationship type.');
   const aliasCols = unique(options.aliasCols || []).filter(c => c !== nameCol && c !== acceptedCol);
+  const targets = new Map();
   const bb = { id, label, mode, entries: Object.create(null), nRows: records.length,
     nUnparseable: 0, nSkippedRows: 0, nMultipleReferences: 0, nAmbiguous: 0,
     hasStatus: mode === MODES.TAXONOMIC && Boolean(statusCol),
@@ -64,23 +67,38 @@ export function build(id, label, records, nameCol, statusCol, acceptedCol, optio
     const group = unique([reference, ...aliases]);
     const rawStatus = bb.hasStatus ? String(row[statusCol] ?? '').trim() : '';
     const acceptedRaw = bb.hasAccepted ? String(row[acceptedCol] ?? '').trim() : '';
-    const accepted = acceptedRaw ? listName(acceptedRaw) : '';
+    const unsupportedTarget = acceptedRaw && options.speciesTargetsOnly && !speciesTarget(acceptedRaw);
+    const accepted = acceptedRaw && !unsupportedTarget ? listName(acceptedRaw) : '';
     const distribution = options.distributionCol ? String(row[options.distributionCol] ?? '').trim() : '';
     const claim = mode === MODES.TAXONOMIC ? classify(rawStatus, reference, accepted, bb.hasStatus) : null;
-    if (claim && acceptedRaw && !accepted) {
+    if (claim && acceptedRaw && !accepted && !unsupportedTarget) {
       bb.nUnparseable++;
       claim.status = 'unrecognized_status';
       claim.acceptedName = '';
     }
-    add(reference, reference, group, claim,
-      acceptedRaw && !accepted ? `${rawStatus ? rawStatus + '; ' : ''}Accepted-name cell could not be parsed.`
-        : bb.hasStatus && !rawStatus ? 'No taxonomic status supplied by this list.' : rawStatus,
-      distribution);
+    const notes = [
+      rawStatus || (bb.hasStatus ? 'No taxonomic status supplied by this list.' : ''),
+      options.showAcceptedUsage && acceptedRaw ? `Accepted name as supplied: ${acceptedRaw}` : '',
+      unsupportedTarget ? 'Target is outside the supported species-name format.'
+        : acceptedRaw && !accepted ? 'Accepted-name cell could not be parsed.' : '',
+      options.nomenclaturalStatusCol && row[options.nomenclaturalStatusCol]
+        ? `Nomenclatural status: ${row[options.nomenclaturalStatusCol]}` : '',
+    ];
+    add(reference, reference, group, claim, notes.filter(Boolean).join('; '), distribution);
+    if (options.inferAcceptedTargets && claim?.status === STATUS.SYNONYM && accepted) {
+      targets.set(accepted.toLowerCase(), accepted);
+    }
     for (const alias of group.filter(n => n.toLowerCase() !== reference.toLowerCase())) {
       add(alias, reference, group, mode === MODES.TAXONOMIC
         ? { status: acceptedRaw && !accepted ? 'unrecognized_status' : STATUS.SYNONYM,
           acceptedName: acceptedRaw && !accepted ? '' : accepted || reference } : null, '', distribution);
     }
+  }
+  // An accepted-name column can supply a target even if the file has no
+  // standalone row for it. Explicit rows retain their own claims.
+  for (const [key, target] of targets) {
+    if (!bb.entries[key]) add(target, target, [target], { status: STATUS.ACCEPTED, acceptedName: target },
+      'Listed as an accepted-name target in this database.');
   }
   for (const entry of Object.values(bb.entries)) {
     if (entry.referenceNames.length > 1) bb.nMultipleReferences++;
@@ -113,13 +131,23 @@ export function lookup(bb, binomial) {
   return { ...result, ...entry.claims[0], detail: entry.rawStatuses.join('; ') };
 }
 
+const reverseIndexes = new WeakMap();
+
 export function reverseSynonyms(bb, acceptedName) {
   if (!acceptedName || (bb.mode && bb.mode !== MODES.TAXONOMIC)) return [];
-  return Object.values(bb.entries).filter(entry => {
-    const verdict = lookup(bb, entry.name);
-    return verdict.status === STATUS.SYNONYM &&
-      verdict.acceptedName.toLowerCase() === acceptedName.toLowerCase();
-  }).map(entry => entry.name).sort();
+  if (!reverseIndexes.has(bb)) {
+    const index = new Map();
+    for (const entry of Object.values(bb.entries)) {
+      const claim = !entry.claims ? entry : entry.claims.length === 1 ? entry.claims[0] : null;
+      if (claim?.status !== STATUS.SYNONYM || !claim.acceptedName) continue;
+      const key = claim.acceptedName.toLowerCase();
+      if (!index.has(key)) index.set(key, []);
+      index.get(key).push(entry.name);
+    }
+    for (const names of index.values()) names.sort();
+    reverseIndexes.set(bb, index);
+  }
+  return reverseIndexes.get(bb).get(acceptedName.toLowerCase()) || [];
 }
 
 /** Extra columns preserve the distinction between taxonomy and trade grouping.
